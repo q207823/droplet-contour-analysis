@@ -1,0 +1,40 @@
+name: MATLAB smoke test
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "**/*.m"
+      - ".github/workflows/matlab.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  matlab-smoke-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          products: Image_Processing_Toolbox
+          cache: true
+
+      - name: Verify MATLAB environment
+        uses: matlab-actions/run-command@v2
+        with:
+          command: >-
+            addpath('functions');
+            assert(~isempty(ver('MATLAB')), 'MATLAB is unavailable');
+            assert(~isempty(ver('images')), 'Image Processing Toolbox is unavailable');
+            requiredFunctions = {'contact_angle_calculator', 'findcontourBW', 'lowpass_filter'};
+            assert(all(cellfun(@(name) exist(name, 'file') == 2, requiredFunctions)), 'A required repository function is unavailable');
+            disp(version);
+            disp('MATLAB smoke test passed.');
